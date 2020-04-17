@@ -1,7 +1,7 @@
 /*******************************************************************************
  *                                                                             *
- *  Copyright (C) 2017 by Max Lv <max.c.lv@gmail.com>                          *
- *  Copyright (C) 2017 by Mygod Studio <contact-shadowsocks-android@mygod.be>  *
+ *  Copyright (C) 2020 by Max Lv <max.c.lv@gmail.com>                          *
+ *  Copyright (C) 2020 by Mygod Studio <contact-shadowsocks-android@mygod.be>  *
  *                                                                             *
  *  This program is free software: you can redistribute it and/or modify       *
  *  it under the terms of the GNU General Public License as published by       *
@@ -18,35 +18,24 @@
  *                                                                             *
  *******************************************************************************/
 
-package com.github.shadowsocks.acl
+package com.github.shadowsocks.plugin
 
-import org.junit.Assert
-import org.junit.Test
+import android.content.Intent
+import android.content.pm.PackageManager
+import com.github.shadowsocks.Core.app
 
-class AclTest {
-    companion object {
-        const val BYPASS_BASE = """[bypass_all]
-[proxy_list]"""
-        const val INPUT1 = """$BYPASS_BASE
-1.0.1.0/24
-2000::/8
-(?:^|\.)4tern\.com${'$'}
-"""
-        const val INPUT2 = """[proxy_all]
-[bypass_list]
-10.3.0.0/16
-10.0.0.0/8
-(?:^|\.)chrome\.com${'$'}
-
-[proxy_list]
-# ignored
-0.0.0.0/0
-(?:^|\.)about\.google${'$'}
-"""
+class PluginList : ArrayList<Plugin>() {
+    init {
+        add(NoPlugin)
+        addAll(app.packageManager.queryIntentContentProviders(
+                Intent(PluginContract.ACTION_NATIVE_PLUGIN), PackageManager.GET_META_DATA).map { NativePlugin(it) })
     }
 
-    @Test
-    fun parse() {
-        Assert.assertEquals(INPUT1, Acl().fromReader(INPUT1.reader()).toString())
+    val lookup = mutableMapOf<String, Plugin>().apply {
+        for (plugin in this@PluginList) {
+            fun check(old: Plugin?) = check(old == null || old === plugin)
+            check(put(plugin.id, plugin))
+            for (alias in plugin.idAliases) check(put(alias, plugin))
+        }
     }
 }

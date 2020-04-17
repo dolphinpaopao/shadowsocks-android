@@ -65,13 +65,13 @@ class Subnet(val address: InetAddress, val prefixSize: Int) : Comparable<Subnet>
                 if (a[i] != b[i]) return false
                 ++i
             }
-            return i * 8 == prefixSize || a[i].toInt() == b[i].toInt() and 256 - (1 shl i * 8 + 8 - prefixSize)
+            return i * 8 == prefixSize || a[i] == (b[i].toInt() and -(1 shl i * 8 + 8 - prefixSize)).toByte()
         }
     }
     fun toImmutable() = Immutable(address.address.also {
         var i = prefixSize / 8
         if (prefixSize % 8 > 0) {
-            it[i] = (it[i].toInt() and 256 - (1 shl i * 8 + 8 - prefixSize)).toByte()
+            it[i] = (it[i].toInt() and -(1 shl i * 8 + 8 - prefixSize)).toByte()
             ++i
         }
         while (i < it.size) it[i++] = 0
